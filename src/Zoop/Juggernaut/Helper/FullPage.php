@@ -41,7 +41,7 @@ class FullPage {
         return $this->adapter;
     }
 
-    public function setAdapter($adapter)
+    public function setAdapter(AdapterInterface $adapter)
     {
         $this->adapter = $adapter;
     }
