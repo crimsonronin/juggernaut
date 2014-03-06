@@ -7,10 +7,9 @@
 
 namespace Zoop\Juggernaut\Helper\Database;
 
-interface DatabaseInterface {
-
+interface DatabaseInterface
+{
 //    public function connect();
-
     public function query($query, $ttl = 0);
 
     public function numberOfRows($reference);

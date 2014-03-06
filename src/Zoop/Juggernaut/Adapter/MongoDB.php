@@ -12,8 +12,8 @@ use \MongoCursorException;
 use \MongoId;
 use \MongoRegex;
 
-class MongoDB extends AbstractAdapter implements AdapterInterface {
-
+class MongoDB extends AbstractAdapter implements AdapterInterface
+{
     private $mongo;
     private $database;
     private $collection = 'Cache';
@@ -22,7 +22,8 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
     private $server = 'localhost';
     private $port = '27017';
 
-    public function __construct($database, $username = '', $password = '', $server = 'localhost', $port = '27017') {
+    public function __construct($database, $username = '', $password = '', $server = 'localhost', $port = '27017')
+    {
         $this->database = $database;
         $this->username = $username;
         $this->password = $password;
@@ -30,7 +31,8 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
         $this->port = $port;
     }
 
-    public function setItem($key, $value) {
+    public function setItem($key, $value)
+    {
         //save the value to the local class cache
         parent::setItem($key, $value);
 
@@ -38,17 +40,18 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
         $this->normalizeKey($id);
 
         $this->mongo()->update(
-                array('_id' => $id), array(
-            '_id' => $id,
-            'ttl' => $this->ttl + time(),
-            'value' => $this->encodeValue($value)
-                ), array('upsert' => true)
+            array('_id' => $id), array(
+                '_id' => $id,
+                'ttl' => $this->ttl + time(),
+                'value' => $this->encodeValue($value)
+            ), array('upsert' => true)
         );
 
         $this->removeTempFiles($id);
     }
 
-    public function getItem($key, &$success = null, $queue = true) {
+    public function getItem($key, &$success = null, $queue = true)
+    {
         //check to see if it's already been cached in the class
         $value = parent::getItem($key, $success, $queue);
 
@@ -66,11 +69,11 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
                     //anonymous function to test if we should continue to wait
                     $mongo = $this->mongo();
                     $condition = function() use ($mongo, $id) {
-                                $cache = $mongo->findOne(array(
-                                    '$id' => $id
-                                ));
-                                return !is_null($cache);
-                            };
+                        $cache = $mongo->findOne(array(
+                            '$id' => $id
+                        ));
+                        return !is_null($cache);
+                    };
 
                     $wait = $this->wait($condition);
                     if ($wait === false) {
@@ -105,13 +108,15 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
         }
     }
 
-    public function getFromMongo($id) {
+    public function getFromMongo($id)
+    {
         return $this->mongo()->findOne(array(
                     '_id' => $id
         ));
     }
 
-    public function queue($key) {
+    public function queue($key)
+    {
         try {
             $this->mongo()->insert(array(
                 '_id' => $this->getQueuedId($key),
@@ -122,7 +127,8 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
         }
     }
 
-    public function reCache($key) {
+    public function reCache($key)
+    {
         try {
             $this->mongo()->insert(array(
                 '_id' => $this->getReCacheId($key),
@@ -133,7 +139,8 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
         }
     }
 
-    public function isReCacheInProgress($key) {
+    public function isReCacheInProgress($key)
+    {
         $key = $this->getReCacheId($key);
 
         $reCache = $this->mongo()->findOne(array(
@@ -150,7 +157,8 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
         return false;
     }
 
-    public function isQueueInProgress($key) {
+    public function isQueueInProgress($key)
+    {
         $key = $this->getQueuedId($key);
 
         $reCache = $this->mongo()->findOne(array(
@@ -167,7 +175,8 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
         return false;
     }
 
-    private function mongo() {
+    private function mongo()
+    {
         if (empty($this->mongo)) {
             $db = $this->connect();
             $this->mongo = $db->selectCollection($this->collection);
@@ -175,7 +184,8 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
         return $this->mongo;
     }
 
-    private function connect() {
+    private function connect()
+    {
         if (!empty($this->username) && !empty($this->password)) {
             $connection = new MongoClient('mongodb://' . $this->username . ':' . $this->password . '@' . $this->server . ':' . $this->port);
         } else {
@@ -184,7 +194,8 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
         return $connection->selectDB($this->database);
     }
 
-    private function removeTempFiles($id) {
+    private function removeTempFiles($id)
+    {
         $qId = $this->getQueuedId($id);
         $rId = $this->getReCacheId($id);
 
@@ -192,7 +203,8 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
         $this->mongo()->remove(array('_id' => $rId));
     }
 
-    public function clearQueue($key = null) {
+    public function clearQueue($key = null)
+    {
         if (is_null($key)) {
             $this->mongo()->remove(array('_id' => new MongoRegex('/.*\.' . self::QUEUING_ID . '/')));
             $this->mongo()->remove(array('_id' => new MongoRegex('/.*\.' . self::RECACHE_ID . '/')));
@@ -203,4 +215,12 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
         }
     }
 
+    public function garbageCollection($maxTtl)
+    {
+        $ttl = time() + $maxTtl;
+        return $this->mongo()->remove(
+            array('ttl' => array('$lt' => $ttl)),
+            array('justOne' => false)
+        );
+    }
 }

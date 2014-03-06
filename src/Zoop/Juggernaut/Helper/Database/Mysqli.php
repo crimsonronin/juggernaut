@@ -11,13 +11,14 @@ use \Exception;
 use \mysqli as db;
 use Zoop\Juggernaut\Adapter\AdapterInterface;
 
-class Mysqli extends AbstractDatabase implements DatabaseInterface {
-
+class Mysqli extends AbstractDatabase implements DatabaseInterface
+{
     protected $cache = array();
     protected $connection;
     protected $transactionInProgress = false;
 
-    public function __construct(AdapterInterface $adapter = null, $logQueries = false) {
+    public function __construct(AdapterInterface $adapter = null, $logQueries = false)
+    {
         if (!is_null($adapter)) {
             $this->setAdapter($adapter);
         }
@@ -25,7 +26,8 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
         $this->setLogQueries($logQueries);
     }
 
-    public function __destruct() {
+    public function __destruct()
+    {
         if ($this->displayErrors === true) {
             $errors = $this->getErrors();
             if (!empty($errors)) {
@@ -34,7 +36,8 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
         }
     }
 
-    public function connect($host, $user, $password, $database, $port = 3306, $persistency = false) {
+    public function connect($host, $user, $password, $database, $port = 3306, $persistency = false)
+    {
         try {
             $port = !empty($port) ? intval($port) : 3306;
             $this->connection = new db($host, $user, $password, $database, $port);
@@ -48,7 +51,8 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
         }
     }
 
-    public function query($query, $ttl = 0) {
+    public function query($query, $ttl = 0)
+    {
         $time = microtime(true);
         $cached = true;
         $ttl = intval($ttl);
@@ -108,7 +112,8 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
         return $r;
     }
 
-    private function setCache($key, $result) {
+    private function setCache($key, $result)
+    {
         $rawKey = $key;
         $this->adapter->normalizeKey($key);
         if (!isset($this->cache[$key])) {
@@ -127,7 +132,8 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
         }
     }
 
-    private function getAllRows($result) {
+    private function getAllRows($result)
+    {
         $data = array();
         while ($row = $this->fetchRow($result)) {
             $data[] = $row;
@@ -135,11 +141,13 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
         return $data;
     }
 
-    public function numberOfRows($result) {
+    public function numberOfRows($result)
+    {
         return ($result) ? $result->num_rows : 0;
     }
 
-    public function fetchRow($result) {
+    public function fetchRow($result)
+    {
         if (gettype($result) == 'object') {
             return ($result) ? $result->fetch_array(MYSQLI_ASSOC) : false;
         } else if (is_string($result)) {
@@ -154,19 +162,23 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
         }
     }
 
-    public function getInsertedId() {
+    public function getInsertedId()
+    {
         return ($this->connection) ? $this->connection->insert_id : false;
     }
 
-    public function escape($string) {
+    public function escape($string)
+    {
         return ($this->connection) ? $this->connection->real_escape_string($string) : $string;
     }
 
-    public function affectedRows() {
+    public function affectedRows()
+    {
         return ($this->connection) ? $this->connection->affected_rows : false;
     }
 
-    public function getFields($result) {
+    public function getFields($result)
+    {
         if (gettype($result) == 'object') {
             return $result->fetch_fields();
         } else if (is_array($result) && !empty($result)) {
@@ -176,7 +188,8 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
         return false;
     }
 
-    public function transaction($status = 'begin') {
+    public function transaction($status = 'begin')
+    {
         switch ($status) {
             case 'begin':
                 $this->transactionInProgress = true;
@@ -197,29 +210,32 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
         return true;
     }
 
-    public function beginTransaction() {
+    public function beginTransaction()
+    {
         $this->transactionInProgress = true;
         return $this->connection->autocommit(false);
     }
 
-    public function commitTransaction() {
+    public function commitTransaction()
+    {
         $this->transactionInProgress = false;
         $r = $this->connection->commit();
         $this->connection->autocommit(true);
-        
+
         return $r;
     }
 
-    public function rollbackTransaction() {
+    public function rollbackTransaction()
+    {
         $this->transactionInProgress = false;
         $r = $this->connection->rollback();
         $this->connection->autocommit(true);
-        
+
         return $r;
     }
 
-    public function close() {
+    public function close()
+    {
         return (get_class($this->connection) == 'mysqli') ? @$this->connection->close() : false;
     }
-
 }

@@ -7,18 +7,20 @@
 
 namespace Zoop\Juggernaut\Adapter;
 
-class FileSystem extends AbstractAdapter implements AdapterInterface {
-
+class FileSystem extends AbstractAdapter implements AdapterInterface
+{
     //it's best to have your caching directory below the web root for security
     private $cacheDirectory = '/tmp/cache';
 
-    public function __construct($cacheDirectory = null) {
+    public function __construct($cacheDirectory = null)
+    {
         if (!is_null($cacheDirectory)) {
             $this->setCacheDirectory($cacheDirectory);
         }
     }
 
-    public function setItem($key, $value) {
+    public function setItem($key, $value)
+    {
         //save the value to the local class cache
         parent::setItem($key, $value);
         $fileName = $this->getFileName($key);
@@ -26,7 +28,8 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
         $this->writeToFile($fileName, $value);
     }
 
-    public function getItem($key, &$success = null, $queue = true) {
+    public function getItem($key, &$success = null, $queue = true)
+    {
         //check to see if it's already been cached in the class
         $value = parent::getItem($key, $success, $queue);
 
@@ -39,8 +42,8 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
                 if ($this->isQueueInProgress($fileName) === true) {
                     //anonymous function to test if we should continue to wait
                     $condition = function() use ($fileName) {
-                                return !file_exists($fileName);
-                            };
+                        return !file_exists($fileName);
+                    };
                     $wait = $this->wait($condition);
                     if ($wait === false) {
                         $this->clearQueue($key);
@@ -73,7 +76,8 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
         }
     }
 
-    public function queue($fileName) {
+    public function queue($fileName)
+    {
         if ($this->isDir()) {
             $queueFile = $this->getQueuedId($fileName);
             if (!is_file($queueFile)) {
@@ -82,7 +86,8 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
         }
     }
 
-    public function reCache($fileName) {
+    public function reCache($fileName)
+    {
         if ($this->isDir()) {
             $queueFile = $this->getReCacheId($fileName);
             if (!is_file($queueFile)) {
@@ -91,7 +96,8 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
         }
     }
 
-    public function isReCacheInProgress($fileName) {
+    public function isReCacheInProgress($fileName)
+    {
         $reCacheFile = $this->getReCacheId($fileName);
         if (is_file($reCacheFile) && $this->isDir()) {
             $ttl = @file_get_contents($reCacheFile);
@@ -104,7 +110,8 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
         return false;
     }
 
-    public function isQueueInProgress($fileName) {
+    public function isQueueInProgress($fileName)
+    {
         $queueFile = $this->getQueuedId($fileName);
         if (is_file($queueFile) && $this->isDir()) {
             $ttl = @file_get_contents($queueFile);
@@ -117,22 +124,26 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
         return false;
     }
 
-    private function getFileName($key) {
+    private function getFileName($key)
+    {
         $this->normalizeKey($key);
         return $this->cacheDirectory . '/' . $this->namespace . '/' . $key . '.php';
     }
 
-    public function setCacheDirectory($cacheDirectory) {
+    public function setCacheDirectory($cacheDirectory)
+    {
         $this->cacheDirectory = $cacheDirectory;
         return $this;
     }
 
-    public function setCacheFilePrefix($namespace) {
+    public function setCacheFilePrefix($namespace)
+    {
         $this->namespace = $namespace;
         return $this;
     }
 
-    private function readFromFile($fileName) {
+    private function readFromFile($fileName)
+    {
         if (file_exists($fileName) === true) {
             return $this->decodeValue(@file_get_contents($fileName));
         }
@@ -140,7 +151,8 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
         return null;
     }
 
-    public function getTtl($key) {
+    public function getTtl($key)
+    {
         $fileName = $this->getFileName($key);
         if (is_file($fileName) === true && $this->ttl != 0) {
             return filemtime($fileName) + $this->ttl;
@@ -148,7 +160,8 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
         return 0;
     }
 
-    private function writeToFile($fileName, $value) {
+    private function writeToFile($fileName, $value)
+    {
         try {
             if ($this->isDir()) {
                 $content = $this->encodeValue($value);
@@ -161,7 +174,8 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
         }
     }
 
-    private function removeTempFiles($fileName) {
+    private function removeTempFiles($fileName)
+    {
         $queingFile = $this->getQueuedId($fileName);
         if (is_file($queingFile) === true) {
             @unlink($queingFile);
@@ -173,14 +187,16 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
         }
     }
 
-    private function isDir() {
+    private function isDir()
+    {
         if (!is_dir($this->cacheDirectory . '/' . $this->namespace)) {
             return @mkdir($this->cacheDirectory . '/' . $this->namespace, 0755, true);
         }
         return true;
     }
 
-    public function clearQueue($key = null) {
+    public function clearQueue($key = null)
+    {
         if (is_null($key)) {
             foreach (glob('*.' . self::QUEUING_ID) as $key) {
                 $fileName = str_replace('.' . self::QUEUING_ID, '', $key);
@@ -192,4 +208,14 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
         }
     }
 
+    public function garbageCollection($maxTtl)
+    {
+        $ttl = time() + $maxTtl;
+        foreach (glob('*') as $key) {
+            $file = $this->getFileName($key);
+            if($ttl < (filemtime($file) + $this->ttl)) {
+                @unlink($file);
+            }
+        }
+    }
 }

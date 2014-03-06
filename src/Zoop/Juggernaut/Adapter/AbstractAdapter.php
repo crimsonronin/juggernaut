@@ -7,7 +7,8 @@
 
 namespace Zoop\Juggernaut\Adapter;
 
-abstract class AbstractAdapter {
+abstract class AbstractAdapter
+{
 
     const CODEC_AUTO = 'auto';
     const QUEUING_ID = 'queued';
@@ -23,12 +24,14 @@ abstract class AbstractAdapter {
     protected $queueTtl = 10; /* 10s */
     protected $ttl = 30; /* 30s */
 
-    public function normalizeKey(&$key) {
+    public function normalizeKey(&$key)
+    {
         //less collision than md5 but takes a small performance hit
         $key = sha1($key);
     }
 
-    public function getItem($key, &$success = null, $queue = true) {
+    public function getItem($key, &$success = null, $queue = true)
+    {
         $this->normalizeKey($key);
 
         if (isset($this->cache[$key])) {
@@ -40,17 +43,20 @@ abstract class AbstractAdapter {
         return null;
     }
 
-    public function setItem($key, $value) {
+    public function setItem($key, $value)
+    {
         $this->normalizeKey($key);
 
         $this->cache[$key] = $value;
     }
 
-    public function setTtl($ttl) {
+    public function setTtl($ttl)
+    {
         $this->ttl = intval($ttl);
     }
 
-    protected function encodeValue($value) {
+    protected function encodeValue($value)
+    {
         if ($this->valueEncoder == self::CODEC_AUTO) {
             if (is_object($value) || is_array($value)) {
                 return serialize($value);
@@ -64,7 +70,8 @@ abstract class AbstractAdapter {
         }
     }
 
-    protected function decodeValue($value) {
+    protected function decodeValue($value)
+    {
         if ($this->valueDecoder == self::CODEC_AUTO) {
             $data = @unserialize($value);
             if ($data !== false) {
@@ -79,37 +86,43 @@ abstract class AbstractAdapter {
         }
     }
 
-    public function setValueEncoder($encoder) {
+    public function setValueEncoder($encoder)
+    {
         if (is_callable($encoder)) {
             $this->valueEncoder = $encoder;
         }
         return $this;
     }
 
-    public function setValueDecoder($decoder) {
+    public function setValueDecoder($decoder)
+    {
         if (is_callable($decoder)) {
             $this->valueDecoder = $decoder;
         }
         return $this;
     }
 
-    public function setNamespace($namespace) {
+    public function setNamespace($namespace)
+    {
         $this->namespace = $namespace;
         return $this;
     }
 
-    public function setQueueWaitPeriod($queueWaitPeriod) {
+    public function setQueueWaitPeriod($queueWaitPeriod)
+    {
         $this->queueWaitPeriod = intval($queueWaitPeriod);
         return $this;
     }
 
-    public function setQueueMaxTries($queueMaxTries) {
+    public function setQueueMaxTries($queueMaxTries)
+    {
         $this->queueMaxTries = intval($queueMaxTries);
         return $this;
     }
 
     // exponential backoff
-    protected function wait($conditionFunction) {
+    protected function wait($conditionFunction)
+    {
         $numTries = 0;
         do {
             usleep($this->queueWaitPeriod + ($this->queueWaitPeriod * pow(2, $numTries)));
@@ -122,12 +135,13 @@ abstract class AbstractAdapter {
         return true;
     }
 
-    protected function getReCacheId($id) {
+    protected function getReCacheId($id)
+    {
         return $id . '.' . self::RECACHE_ID;
     }
 
-    protected function getQueuedId($id) {
+    protected function getQueuedId($id)
+    {
         return $id . '.' . self::QUEUING_ID;
     }
-
 }

@@ -6,36 +6,14 @@ use Zoop\Juggernaut\Adapter\AdapterInterface;
 
 abstract class AbstractDatabase
 {
+    /* @var $adapter AdapterInterface */
+
     protected $adapter = null;
     protected $log = array();
     protected $errors = array();
     protected $logQueries = false;
     protected $displayErrors = false;
     protected $totalExecutionTime = 0;
-
-    /**
-     * 
-     * @return AdapterInterface
-     */
-    public function getAdapter()
-    {
-        return $this->adapter;
-    }
-
-    public function getLogQueries()
-    {
-        return $this->logQueries;
-    }
-
-    public function getDisplayErrors()
-    {
-        return $this->displayErrors;
-    }
-
-    public function getTotalExecutionTime()
-    {
-        return $this->totalExecutionTime;
-    }
 
     public function setAdapter(AdapterInterface $handler)
     {
@@ -90,5 +68,4 @@ abstract class AbstractDatabase
             'totalExecutionTime' => $this->totalExecutionTime
         );
     }
-
 }

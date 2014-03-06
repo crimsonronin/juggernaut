@@ -26,4 +26,6 @@ interface AdapterInterface {
     public function normalizeKey(&$key);
 
     public function setTtl($ttl);
+
+    public function garbageCollection($maxTtl);
 }

@@ -10,7 +10,8 @@ namespace Zoop\Juggernaut\Helper;
 use Zoop\Juggernaut\Adapter\FileSystem;
 use Zoop\Juggernaut\Adapter\AdapterInterface;
 
-class FullPage {
+class FullPage
+{
 
     private $adapter;
     private $auto = true;
@@ -109,4 +110,5 @@ class FullPage {
         $fileName = $protocol . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
         return $fileName;
     }
+
 }
